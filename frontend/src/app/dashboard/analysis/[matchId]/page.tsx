@@ -236,6 +236,39 @@ export default function AnalysisPage({ params }: { params: { matchid: string } }
               </div>
             </div>
           </div>
+
+          {/* Ingested Frame Dataset Card */}
+          {stats && (
+            <div className="border border-border rounded-xl p-5 bg-card/40 space-y-4 shadow-sm animate-in fade-in duration-200">
+              <div className="flex items-center justify-between border-b border-border/60 pb-3">
+                <h4 className="font-bold text-sm text-muted-foreground">Ingested Video Frame Dataset</h4>
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-0.5 rounded-full">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  Dataset Ready
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="bg-muted/20 border border-border/50 rounded-lg p-3 text-center">
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Total Frames</p>
+                  <p className="text-xl font-extrabold mt-1 font-mono text-foreground">{stats.total_frames || "N/A"}</p>
+                </div>
+                <div className="bg-muted/20 border border-border/50 rounded-lg p-3 text-center">
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Target Resolution</p>
+                  <p className="text-xl font-extrabold mt-1 font-mono text-foreground">{stats.resolution || "N/A"}</p>
+                </div>
+                <div className="bg-muted/20 border border-border/50 rounded-lg p-3 text-center">
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Dataset Frame Rate</p>
+                  <p className="text-xl font-extrabold mt-1 font-mono text-foreground">{stats.fps || "25"} FPS</p>
+                </div>
+              </div>
+
+              <div className="text-[10px] text-muted-foreground bg-muted/30 p-3 rounded-lg border border-border/40 font-mono leading-relaxed space-y-1">
+                <p><span className="text-primary font-bold">📂 Dataset Path:</span> processing/{matchId}/frames/</p>
+                <p><span className="text-primary font-bold">ℹ️ Extraction:</span> Every frame extracted dynamically (1:1 interval indexing)</p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Right Column: Dynamic AI Coach chat panel */}
