@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import { ArrowLeft, Send, Sparkles, Loader2, ShieldAlert } from "lucide-react";
 
 interface MatchSession {
@@ -22,8 +23,10 @@ interface Message {
   text: string;
 }
 
-export default function AnalysisPage({ params }: { params: any }) {
-  const [matchId, setMatchId] = useState<string | null>(null);
+export default function AnalysisPage() {
+  const params = useParams();
+  const matchId = params?.matchid as string;
+
   const [match, setMatch] = useState<MatchSession | null>(null);
   const [stats, setStats] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -39,19 +42,6 @@ export default function AnalysisPage({ params }: { params: any }) {
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
-
-  // Safely resolve params (Promise vs Object)
-  useEffect(() => {
-    if (params) {
-      if (typeof params.then === "function" || params instanceof Promise) {
-        Promise.resolve(params).then((resolvedParams: any) => {
-          setMatchId(resolvedParams?.matchid || resolvedParams?.matchId || null);
-        });
-      } else {
-        setMatchId(params.matchid || params.matchId || null);
-      }
-    }
-  }, [params]);
 
   useEffect(() => {
     if (!matchId) return;
