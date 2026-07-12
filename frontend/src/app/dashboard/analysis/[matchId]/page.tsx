@@ -25,7 +25,7 @@ interface Message {
 
 export default function AnalysisPage() {
   const params = useParams();
-  const matchId = params?.matchid as string;
+  const matchId = (params?.matchId || params?.matchid) as string;
 
   const [match, setMatch] = useState<MatchSession | null>(null);
   const [stats, setStats] = useState<any>(null);
