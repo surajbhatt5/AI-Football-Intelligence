@@ -22,9 +22,8 @@ interface Message {
   text: string;
 }
 
-export default function AnalysisPage({ params }: { params: { matchid: string } }) {
-  const matchId = params.matchid;
-  
+export default function AnalysisPage({ params }: { params: any }) {
+  const [matchId, setMatchId] = useState<string | null>(null);
   const [match, setMatch] = useState<MatchSession | null>(null);
   const [stats, setStats] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -41,7 +40,22 @@ export default function AnalysisPage({ params }: { params: { matchid: string } }
   const [isTyping, setIsTyping] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
+  // Safely resolve params (Promise vs Object)
   useEffect(() => {
+    if (params) {
+      if (typeof params.then === "function" || params instanceof Promise) {
+        Promise.resolve(params).then((resolvedParams: any) => {
+          setMatchId(resolvedParams?.matchid || resolvedParams?.matchId || null);
+        });
+      } else {
+        setMatchId(params.matchid || params.matchId || null);
+      }
+    }
+  }, [params]);
+
+  useEffect(() => {
+    if (!matchId) return;
+
     const loadSessionData = async () => {
       try {
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
