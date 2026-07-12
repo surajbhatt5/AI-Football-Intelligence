@@ -1,17 +1,40 @@
 import os
 import json
 import random
+import logging
 from fastapi import APIRouter, HTTPException, BackgroundTasks
 from app.api.v1.endpoints.matches import MATCHES_DB
 from app.services.video_processor import VideoProcessor, PROCESSING_STATUS
 from app.core.config import settings
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
+
+def run_analysis_pipeline(video_id: str, filepath: str):
+    """
+    Sequentially executes (1) frame dataset extraction, followed by (2) YOLO player detection
+    under a background worker thread.
+    """
+    from app.services.player_detector import PlayerDetector
+    
+    # Step 1: Extraction (0% to 50%)
+    processor = VideoProcessor()
+    processor.process_video(video_id, filepath, frame_interval=1)
+    
+    # Verify stage 1 resolved successfully
+    status_info = PROCESSING_STATUS.get(video_id, {})
+    if status_info.get("status") == "failed":
+        logger.error(f"Analysis pipeline aborted: match_id={video_id} - Frame extraction failed.")
+        return
+        
+    # Step 2: YOLO Player Detection (50% to 100%)
+    detector = PlayerDetector()
+    detector.detect_players(video_id)
 
 @router.post("/{match_id}/process")
 async def process_analysis(match_id: str, background_tasks: BackgroundTasks):
     """
-    Spins up the OpenCV frame extraction loop in a background thread and updates the match status.
+    Spins up the dynamic extraction + YOLO player detection pipeline in a background thread.
     """
     match_found = None
     for match in MATCHES_DB:
@@ -35,18 +58,16 @@ async def process_analysis(match_id: str, background_tasks: BackgroundTasks):
     # Update match database state
     match_found["status"] = "processing"
     
-    # Spawn background task
-    processor = VideoProcessor()
+    # Dispatch sequential task worker
     background_tasks.add_task(
-        processor.process_video,
+        run_analysis_pipeline,
         video_id=match_id,
-        filepath=filepath,
-        frame_interval=1
+        filepath=filepath
     )
         
     return {
         "status": "processing",
-        "message": "Video frame extraction and metadata parsing initiated in background."
+        "message": "Analysis pipeline (extraction and player detection) initiated in background."
     }
 
 @router.get("/{match_id}/stats")

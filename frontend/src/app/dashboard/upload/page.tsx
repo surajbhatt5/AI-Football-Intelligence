@@ -20,6 +20,7 @@ export default function UploadPage() {
   const [totalFrames, setTotalFrames] = useState(0);
   const [procFps, setProcFps] = useState(0);
   const [procRes, setProcRes] = useState("");
+  const [pipelineStage, setPipelineStage] = useState("");
 
   const handleUploadSuccess = (metadata: UploadedVideoMetadata) => {
     setUploadedVideo(metadata);
@@ -32,6 +33,7 @@ export default function UploadPage() {
     setErrorMsg("");
     setProgressPercent(0);
     setFramesProcessed(0);
+    setPipelineStage("extraction");
 
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
@@ -54,6 +56,7 @@ export default function UploadPage() {
               setTotalFrames(statsData.total_frames || 0);
               setProcFps(statsData.fps || 0);
               setProcRes(statsData.resolution || "");
+              setPipelineStage(statsData.stage || "");
 
               if (statsData.status === "completed") {
                 clearInterval(pollInterval);
@@ -170,7 +173,9 @@ export default function UploadPage() {
                     <div className="flex items-center justify-between text-xs font-bold text-muted-foreground uppercase tracking-wide">
                       <span className="flex items-center gap-1.5">
                         <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
-                        Extracting video frames...
+                        {pipelineStage === "detection" 
+                          ? "Step 2/2: YOLOv8 Player Detection..." 
+                          : "Step 1/2: Extracting video frames..."}
                       </span>
                       <span className="text-primary font-mono text-sm">{progressPercent}%</span>
                     </div>
@@ -185,7 +190,7 @@ export default function UploadPage() {
 
                     <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-muted-foreground mt-2 border-t border-border/40 pt-3">
                       <div className="flex justify-between">
-                        <span>Frames Extracted:</span>
+                        <span>{pipelineStage === "detection" ? "Frames Analyzed:" : "Frames Extracted:"}</span>
                         <span className="font-semibold text-foreground">{framesProcessed} / {totalFrames}</span>
                       </div>
                       <div className="flex justify-between">
@@ -203,7 +208,7 @@ export default function UploadPage() {
                 {analysisState === "success" && (
                   <div className="flex items-center gap-3 text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 p-4 rounded-xl text-sm font-semibold animate-in zoom-in-95 duration-200">
                     <CheckCircle2 className="h-5 w-5 shrink-0 animate-bounce" />
-                    Frame dataset extraction completed successfully! Redirecting to workspace...
+                    Analysis and player detection completed successfully! Ingesting match...
                   </div>
                 )}
               </>

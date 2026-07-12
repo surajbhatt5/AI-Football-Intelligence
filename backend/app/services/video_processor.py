@@ -20,6 +20,7 @@ class VideoProcessor:
         # Initialize progress tracker fields
         PROCESSING_STATUS[video_id] = {
             "status": "processing",
+            "stage": "extraction",
             "frames_processed": 0,
             "total_frames": 0,
             "percentage": 0,
@@ -78,7 +79,7 @@ class VideoProcessor:
                 
                 # Throttle progress reporting updates to avoid CPU lockups
                 if frame_idx % 30 == 0 or frame_idx == frame_count:
-                    pct = int((frame_idx * 100) / frame_count)
+                    pct = int((frame_idx * 50) / frame_count)
                     PROCESSING_STATUS[video_id]["frames_processed"] = frame_idx
                     PROCESSING_STATUS[video_id]["percentage"] = pct
                     logger.debug(f"Processing progress {video_id}: {pct}% ({frame_idx}/{frame_count})")
@@ -101,9 +102,9 @@ class VideoProcessor:
             with open(metadata_path, "w") as f:
                 json.dump(metadata, f, indent=2)
                 
-            # Set completed state
-            PROCESSING_STATUS[video_id]["status"] = "completed"
-            PROCESSING_STATUS[video_id]["percentage"] = 100
+            # Set extraction complete state (letting status remain processing for stage 2)
+            PROCESSING_STATUS[video_id]["stage"] = "extraction"
+            PROCESSING_STATUS[video_id]["percentage"] = 50
             PROCESSING_STATUS[video_id]["frames_processed"] = frame_count
             logger.info(f"Successfully processed match {video_id}. Total JPEG frames saved: {extracted_count}")
             
