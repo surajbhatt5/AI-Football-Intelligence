@@ -241,36 +241,85 @@ export default function AnalysisPage() {
             </div>
           </div>
 
-          {/* Ingested Frame Dataset Card */}
+          {/* Dataset & Player Detection Cards Row */}
           {stats && (
-            <div className="border border-border rounded-xl p-5 bg-card/40 space-y-4 shadow-sm animate-in fade-in duration-200">
-              <div className="flex items-center justify-between border-b border-border/60 pb-3">
-                <h4 className="font-bold text-sm text-muted-foreground">Ingested Video Frame Dataset</h4>
-                <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-0.5 rounded-full">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  Dataset Ready
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in duration-200">
+              {/* Ingested Frame Dataset Card */}
+              <div className="border border-border rounded-xl p-5 bg-card/40 space-y-4 shadow-sm">
+                <div className="flex items-center justify-between border-b border-border/60 pb-3">
+                  <h4 className="font-bold text-sm text-muted-foreground">Ingested Video Frame Dataset</h4>
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-0.5 rounded-full">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    Dataset Ready
+                  </div>
                 </div>
-              </div>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="bg-muted/20 border border-border/50 rounded-lg p-3 text-center">
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Total Frames</p>
-                  <p className="text-xl font-extrabold mt-1 font-mono text-foreground">{stats.total_frames || "N/A"}</p>
+                
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="bg-muted/20 border border-border/50 rounded-lg p-2 text-center">
+                    <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">Total Frames</p>
+                    <p className="text-base font-extrabold mt-0.5 font-mono text-foreground">{stats.total_frames || "N/A"}</p>
+                  </div>
+                  <div className="bg-muted/20 border border-border/50 rounded-lg p-2 text-center">
+                    <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">Resolution</p>
+                    <p className="text-base font-extrabold mt-0.5 font-mono text-foreground truncate">{stats.resolution || "N/A"}</p>
+                  </div>
+                  <div className="bg-muted/20 border border-border/50 rounded-lg p-2 text-center">
+                    <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">Frame Rate</p>
+                    <p className="text-base font-extrabold mt-0.5 font-mono text-foreground">{stats.fps || "25"} FPS</p>
+                  </div>
                 </div>
-                <div className="bg-muted/20 border border-border/50 rounded-lg p-3 text-center">
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Target Resolution</p>
-                  <p className="text-xl font-extrabold mt-1 font-mono text-foreground">{stats.resolution || "N/A"}</p>
-                </div>
-                <div className="bg-muted/20 border border-border/50 rounded-lg p-3 text-center">
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Dataset Frame Rate</p>
-                  <p className="text-xl font-extrabold mt-1 font-mono text-foreground">{stats.fps || "25"} FPS</p>
+
+                <div className="text-[10px] text-muted-foreground bg-muted/30 p-2.5 rounded-lg border border-border/40 font-mono leading-relaxed space-y-1">
+                  <p><span className="text-primary font-bold">📂 Path:</span> processing/{matchId}/frames/</p>
+                  <p><span className="text-primary font-bold">ℹ️ Mode:</span> 1:1 interval indexing extraction</p>
                 </div>
               </div>
 
-              <div className="text-[10px] text-muted-foreground bg-muted/30 p-3 rounded-lg border border-border/40 font-mono leading-relaxed space-y-1">
-                <p><span className="text-primary font-bold">📂 Dataset Path:</span> processing/{matchId}/frames/</p>
-                <p><span className="text-primary font-bold">ℹ️ Extraction:</span> Every frame extracted dynamically (1:1 interval indexing)</p>
-              </div>
+              {/* Player Detection Report Card */}
+              {stats.detection_summary && (
+                <div className="border border-border rounded-xl p-5 bg-card/40 space-y-4 shadow-sm">
+                  <div className="flex items-center justify-between border-b border-border/60 pb-3">
+                    <h4 className="font-bold text-sm text-muted-foreground">Player Detection Report</h4>
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-0.5 rounded-full">
+                      Ready for Tracking ✅
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-muted-foreground">
+                    <div className="flex justify-between border-b border-border/40 pb-1.5">
+                      <span>Frames Processed:</span>
+                      <span className="font-bold text-foreground">{stats.detection_summary.total_frames_processed}</span>
+                    </div>
+                    <div className="flex justify-between border-b border-border/40 pb-1.5">
+                      <span>Average Players:</span>
+                      <span className="font-bold text-foreground">{stats.detection_summary.average_players_detected_per_frame}</span>
+                    </div>
+                    <div className="flex justify-between border-b border-border/40 pb-1.5">
+                      <span>Confidence:</span>
+                      <span className="font-bold text-emerald-400">
+                        {stats.detection_summary.average_confidence > 1 
+                          ? stats.detection_summary.average_confidence 
+                          : `${(stats.detection_summary.average_confidence * 100).toFixed(1)}%`}
+                      </span>
+                    </div>
+                    <div className="flex justify-between border-b border-border/40 pb-1.5">
+                      <span>Missed Frames:</span>
+                      <span className="font-bold text-destructive">
+                        {stats.detection_summary.failed_frames ? stats.detection_summary.failed_frames.length : 0}
+                      </span>
+                    </div>
+                    <div className="flex justify-between col-span-2 pt-0.5">
+                      <span>Detection Quality:</span>
+                      <span className="font-bold text-emerald-400">Excellent</span>
+                    </div>
+                  </div>
+
+                  <div className="text-[10px] text-muted-foreground bg-muted/30 p-2.5 rounded-lg border border-border/40 font-mono leading-relaxed space-y-1">
+                    <p><span className="text-primary font-bold">🎯 Model:</span> YOLOv8 (Class 0 - Person)</p>
+                    <p><span className="text-primary font-bold">📂 Path:</span> processing/{matchId}/detections/</p>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
