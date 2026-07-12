@@ -35,6 +35,12 @@ def get_application() -> FastAPI:
     from app.api.v1.api import api_router
     application.include_router(api_router, prefix=settings.API_V1_STR)
 
+    # Mount static file directory for video playback
+    from fastapi.staticfiles import StaticFiles
+    import os
+    os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
+    application.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads")
+
     return application
 
 

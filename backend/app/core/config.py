@@ -37,6 +37,7 @@ class Settings(BaseSettings):
     # Storage settings
     STORAGE_TYPE: str = "local"
     UPLOAD_DIR: str = "/app/uploads"
+    PROCESSING_DIR: str = "/app/processing"
 
     # Load configuration
     model_config = SettingsConfigDict(

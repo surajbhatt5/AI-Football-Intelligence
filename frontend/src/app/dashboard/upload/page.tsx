@@ -14,6 +14,13 @@ export default function UploadPage() {
   const [analysisState, setAnalysisState] = useState<"idle" | "processing" | "success" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
 
+  // Live video extraction progress states
+  const [progressPercent, setProgressPercent] = useState(0);
+  const [framesProcessed, setFramesProcessed] = useState(0);
+  const [totalFrames, setTotalFrames] = useState(0);
+  const [procFps, setProcFps] = useState(0);
+  const [procRes, setProcRes] = useState("");
+
   const handleUploadSuccess = (metadata: UploadedVideoMetadata) => {
     setUploadedVideo(metadata);
   };
@@ -23,6 +30,8 @@ export default function UploadPage() {
 
     setAnalysisState("processing");
     setErrorMsg("");
+    setProgressPercent(0);
+    setFramesProcessed(0);
 
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
@@ -34,20 +43,44 @@ export default function UploadPage() {
       });
 
       if (response.ok) {
-        const data = await response.json();
-        if (data.status === "ready_for_analysis") {
-          setAnalysisState("success");
-          // Staggered redirect to dashboard after 2 seconds to let the user see the success state
-          setTimeout(() => {
-            router.push("/dashboard");
-          }, 2000);
-        } else {
-          setAnalysisState("error");
-          setErrorMsg("Ingestion engine returned unexpected status.");
-        }
+        const pollInterval = setInterval(async () => {
+          try {
+            const statsRes = await fetch(`${apiUrl}/analysis/${uploadedVideo.video_id}/stats`);
+            if (statsRes.ok) {
+              const statsData = await statsRes.json();
+              
+              setProgressPercent(statsData.percentage || 0);
+              setFramesProcessed(statsData.frames_processed || 0);
+              setTotalFrames(statsData.total_frames || 0);
+              setProcFps(statsData.fps || 0);
+              setProcRes(statsData.resolution || "");
+
+              if (statsData.status === "completed") {
+                clearInterval(pollInterval);
+                setAnalysisState("success");
+                setTimeout(() => {
+                  router.push("/dashboard");
+                }, 1500);
+              } else if (statsData.status === "failed") {
+                clearInterval(pollInterval);
+                setAnalysisState("error");
+                setErrorMsg(statsData.error || "Frame extraction task failed on processing server.");
+              }
+            } else {
+              clearInterval(pollInterval);
+              setAnalysisState("error");
+              setErrorMsg("Failed to query frame extraction statistics.");
+            }
+          } catch (err) {
+            clearInterval(pollInterval);
+            setAnalysisState("error");
+            setErrorMsg("Connection to extraction server lost during analysis.");
+          }
+        }, 800);
       } else {
+        const data = await response.json().catch(() => ({}));
         setAnalysisState("error");
-        setErrorMsg(`Analysis server returned status: ${response.statusText || response.status}`);
+        setErrorMsg(data.detail || `Analysis server returned status: ${response.statusText || response.status}`);
       }
     } catch (err) {
       setAnalysisState("error");
@@ -133,20 +166,44 @@ export default function UploadPage() {
                 )}
 
                 {analysisState === "processing" && (
-                  <button
-                    type="button"
-                    disabled
-                    className="w-full h-11 inline-flex items-center justify-center gap-2 rounded-xl bg-primary/20 text-primary border border-primary/20 px-6 text-sm font-semibold cursor-not-allowed"
-                  >
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Running tactical segmentation...
-                  </button>
+                  <div className="space-y-4 bg-muted/40 border border-border/80 p-5 rounded-xl animate-in fade-in duration-200">
+                    <div className="flex items-center justify-between text-xs font-bold text-muted-foreground uppercase tracking-wide">
+                      <span className="flex items-center gap-1.5">
+                        <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+                        Extracting video frames...
+                      </span>
+                      <span className="text-primary font-mono text-sm">{progressPercent}%</span>
+                    </div>
+                    
+                    {/* Glowing progress bar */}
+                    <div className="w-full h-2.5 bg-muted rounded-full overflow-hidden relative border border-border/40">
+                      <div
+                        className="h-full bg-gradient-to-r from-primary to-emerald-400 rounded-full transition-all duration-300 shadow-[0_0_10px_rgba(16,185,129,0.35)]"
+                        style={{ width: `${progressPercent}%` }}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-muted-foreground mt-2 border-t border-border/40 pt-3">
+                      <div className="flex justify-between">
+                        <span>Frames Extracted:</span>
+                        <span className="font-semibold text-foreground">{framesProcessed} / {totalFrames}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Frame Rate:</span>
+                        <span className="font-semibold text-foreground">{procFps} FPS</span>
+                      </div>
+                      <div className="flex justify-between col-span-2">
+                        <span>Video Resolution:</span>
+                        <span className="font-semibold text-foreground">{procRes}</span>
+                      </div>
+                    </div>
+                  </div>
                 )}
 
                 {analysisState === "success" && (
                   <div className="flex items-center gap-3 text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 p-4 rounded-xl text-sm font-semibold animate-in zoom-in-95 duration-200">
-                    <CheckCircle2 className="h-5 w-5 shrink-0" />
-                    Analysis initialized successfully! Redirecting to workspace...
+                    <CheckCircle2 className="h-5 w-5 shrink-0 animate-bounce" />
+                    Frame dataset extraction completed successfully! Redirecting to workspace...
                   </div>
                 )}
               </>
@@ -167,6 +224,25 @@ export default function UploadPage() {
                   className="w-full h-11 inline-flex items-center justify-center gap-2 rounded-xl bg-muted text-muted-foreground border border-border px-6 text-sm font-semibold cursor-not-allowed"
                 >
                   Analyze Match Disabled
+                </button>
+              </div>
+            )}
+
+            {analysisState === "error" && (
+              <div className="space-y-3 animate-in fade-in duration-200">
+                <div className="flex items-start gap-3 text-destructive bg-destructive/5 border border-destructive/20 p-4 rounded-xl text-sm font-semibold">
+                  <ShieldAlert className="h-5 w-5 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <p className="font-bold">Extraction Pipeline Error</p>
+                    <p className="text-xs leading-relaxed font-normal text-muted-foreground">{errorMsg}</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={startAnalysis}
+                  className="w-full h-11 inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-6 text-sm font-semibold text-primary-foreground shadow hover:bg-primary/95 transition-all"
+                >
+                  Retry Ingestion
                 </button>
               </div>
             )}

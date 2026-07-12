@@ -23,7 +23,9 @@ MATCHES_DB = [
         "scene": "Open Play",
         "confidence": 0.95,
         "analysisReady": True,
-        "error_detail": ""
+        "error_detail": "",
+        "filepath": "",
+        "video_url": ""
     },
     {
         "id": "match_session_2",
@@ -38,7 +40,9 @@ MATCHES_DB = [
         "scene": "Open Play",
         "confidence": 0.95,
         "analysisReady": True,
-        "error_detail": ""
+        "error_detail": "",
+        "filepath": "",
+        "video_url": ""
     }
 ]
 
@@ -48,6 +52,20 @@ async def list_matches():
     Lists all matches uploaded and validated in the current session.
     """
     return MATCHES_DB
+
+@router.get("/{match_id}")
+async def get_match(match_id: str):
+    """
+    Returns the metadata of a single match session.
+    """
+    for match in MATCHES_DB:
+        if match["id"] == match_id:
+            return match
+            
+    raise HTTPException(
+        status_code=404,
+        detail="Match session not found in active workspace."
+    )
 
 @router.post("/upload")
 async def upload_match(
@@ -114,6 +132,9 @@ async def upload_match(
     classifier = FootballSceneClassifier()
     classification = classifier.classify_scene(filepath, video_type)
     
+    # Generate static stream endpoint
+    video_url = f"http://localhost:8000/uploads/{filename}"
+    
     # Create matching dictionary
     new_match = {
         "id": video_id,
@@ -128,7 +149,9 @@ async def upload_match(
         "scene": classification["scene"],
         "confidence": classification["confidence"],
         "analysisReady": classification["analysisReady"],
-        "error_detail": classification.get("error", "")
+        "error_detail": classification.get("error", ""),
+        "filepath": filepath,
+        "video_url": video_url
     }
     
     # Push into database list
@@ -139,6 +162,7 @@ async def upload_match(
         "video_id": video_id,
         "filename": file.filename,
         "filepath": filepath,
+        "video_url": video_url,
         "size": size_str,
         "duration": duration_str,
         "resolution": resolution_str,
