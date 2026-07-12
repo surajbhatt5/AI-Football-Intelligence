@@ -44,6 +44,8 @@ yarn-error.log*
 data/
 uploads/
 /backend/uploads/
+processing/
+/backend/processing/
 pg_data/
 chroma_data/
 
